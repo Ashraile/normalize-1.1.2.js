@@ -289,7 +289,7 @@
 	};
 
 	// Detect IE without User-agent hacks. | Supports minification. | (L) MIT
-	// Version 1.1.7 | https://github.com/Kithraya/detect-IE
+	// Version 1.1.7 | https://github.com/Kithraya/detect-IE (me)
 	var isIE = (function(envir, is_default_IE11) {
 
 		var mapIE = { '5': 5, '5.5': 5.5, '5.6': 6, '5.7': 7, '5.8': 8, '9': 9, '10': 11, '11': 11 }; // IE browser versions
