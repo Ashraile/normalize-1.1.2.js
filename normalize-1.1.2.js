@@ -166,7 +166,7 @@
 	// https://kangax.github.io/nfe/
 
 	var global = window, cl = console.log;
-	// there are 3 types of people in this world: sheep, wolves, and sheepdogs
+
 	var _SUPPORTS_ = {
 
 		// full support of Object.defineProperty
