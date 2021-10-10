@@ -49,7 +49,6 @@
 	and it being impossible to determine if
 	the function was called with null, undefined or window
 
-	difference between Function.prototype.call.bind
 
 */
 "version 1.1.2.00";
