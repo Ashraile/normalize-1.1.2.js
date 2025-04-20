@@ -208,9 +208,9 @@
 
 		'NFESafari2.x': null, // TODO
 
-		// Check failure of by-index access of string characters (IE < 9) and failure of `0 in boxedString` (Rhino)
+		// Check failure of by-index access of string characters (IE < 9) and failure of `0 in StringAsObject` (Rhino)
 		'string-bracket-notation': (function(StringAsObject) {
-			return ((StringAsObject[0] === 'a') && (0 in StringAsObject)); // if supported, is `true && true` which evaluates to true. If either are not it is false, (needSplitString)
+			return ((StringAsObject[0] === 'a') && (0 in StringAsObject)); // if false, (needSplitString)
 		})( Object('a') )
 	};
 
