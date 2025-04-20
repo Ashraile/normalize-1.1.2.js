@@ -169,6 +169,20 @@
 
 	var _SUPPORTS_ = {
 
+                // full support of named function expressions
+		'NFE': (function(g) { // Ensure `g` is always undefined while not overriding inner scope with `var`.
+		    return function() { 
+                        var f = function g(){}; return (typeof g !== 'function'); // IE<9: `g` is 'function'
+                    }
+		})()(),
+
+
+                // full support of string bracket notation
+		'string-bracket-notation': (function() {
+                    return (Object("a")[0] === "a") && (0 in Object("a")); // Check failure of by-index access of string characters (IE < 9) and failure of `0 in Object("a")` (Rhino)
+                })(),
+
+
 		// full support of Object.defineProperty
 		'descriptors': !!(function( defineProperty, obj ) {
 			try {
@@ -177,6 +191,7 @@
 				return obj.x === obj;
 			} catch (e) {}
 		})( Object.defineProperty, {} ),
+
 
 		// full support of keyword `let`
 		'let': !!(function() {
@@ -194,24 +209,13 @@
 		   } catch (e) {}
 		})(),
 
-		// void operator
+
+		// `void` operator
 		'void': !!(function() {
 			try { return new Function('return !(void 0)')() } catch (e) {}
 		})(),
 
-		// full support of named function expressions
-		'NFE': (function(g) { // ensure g is never a function while not overriding inner scope with var
-			return function() {
-				var f = function g(){}; return !(typeof g === 'function') // IE<9: g is 'function'
-			}
-		})()(),
-
-		'NFESafari2.x': null, // TODO
-
-		// Check failure of by-index access of string characters (IE < 9) and failure of `0 in boxedString` (Rhino)
-		'string-bracket-notation': (function() {
-                        return (Object("a")[0] === "a") && (0 in Object("a"))
-                })()
+		'NFESafari2.x': null // TODO
 	};
 
 	if (!_SUPPORTS_['NFE'] || !_SUPPORTS_['void']) {
