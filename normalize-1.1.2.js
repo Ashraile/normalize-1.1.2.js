@@ -106,7 +106,7 @@
 
 	//var document = window.document || function() {};
 
-	this.version = "1.1.2.00";
+	this.version = "1.1.2.50";
 	this.name = 'normalize';
 
 	// Console-polyfill. MIT license | # | Dependency | https://github.com/paulmillr/console-polyfill | Makes it safe to do console.log() always.
@@ -208,11 +208,9 @@
 
 		'NFESafari2.x': null, // TODO
 
-		// String bracket notation
-		'string-bracket-notation': (function( boxedString ) {
-			// Check failure of by-index access of string characters (IE < 9) and failure of `0 in boxedString` (Rhino)
-			return (boxedString[0] !== 'a' || !(0 in boxedString)); // needSplitString
-
+		// Check failure of by-index access of string characters (IE < 9) and failure of `0 in boxedString` (Rhino)
+		'string-bracket-notation': (function(StringAsObject) {
+			return ((StringAsObject[0] === 'a') && (0 in StringAsObject)); // if supported, is `true && true` which evaluates to true. If either are not it is false, (needSplitString)
 		})( Object('a') )
 	};
 
