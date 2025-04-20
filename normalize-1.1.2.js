@@ -208,10 +208,10 @@
 
 		'NFESafari2.x': null, // TODO
 
-		// Check failure of by-index access of string characters (IE < 9) and failure of `0 in StringAsObject` (Rhino)
-		'string-bracket-notation': (function(StringAsObject) {
-			return ((StringAsObject[0] === 'a') && (0 in StringAsObject)); // if false, (needSplitString)
-		})( Object('a') )
+		// Check failure of by-index access of string characters (IE < 9) and failure of `0 in boxedString` (Rhino)
+		'string-bracket-notation': (function() {
+                        return (Object("a")[0] === "a") && (0 in Object("a"))
+                })()
 	};
 
 	if (!_SUPPORTS_['NFE'] || !_SUPPORTS_['void']) {
@@ -227,6 +227,8 @@
 
 	// Booleans:
 	var supportsDescriptors = _SUPPORTS_['descriptors'];
+	var splitString = !(_SUPPORTS_['string-bracket-notation']); // Check failure of by-index access of string characters (IE < 9) and failure of `0 in boxedString` (Rhino)
+	
 	var hasToStringTag = (typeof Symbol === 'function' && typeof Symbol.toStringTag === 'symbol');
 
 	var	NON_ENUM = { configurable: true, writable: true },
@@ -275,10 +277,6 @@
 
 	var ErrNullish = ' called on null or undefined!';
 	var constructorRegex = /^\s*class /, funcRegex = /^(\[object (Function|GeneratorFunction)\])$/;
-
-	// Check failure of by-index access of string characters (IE < 9) and failure of `0 in boxedString` (Rhino)
-	var boxedString = Object('a');
-	var splitString = boxedString[0] !== 'a' || !(0 in boxedString);
 
 	// Is:
 	var isActualNaN = Number.isNaN || function isActualNaN(x) { return x !== x };
