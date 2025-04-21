@@ -1,14 +1,13 @@
 /**
 	Normalize-1.1.2.js: A collection of polyfills to standardize the JavaScript browser environment.
- 	Examples: window.console.log, Object.is() / keys(), String.prototype.trim() / fromCodePoint(),
+ 	Examples: window.console.log, Object.prototype.hasOwnProperty(), Object.is() / keys(), String.prototype.trim() / fromCodePoint(),
 	Array.prototype.every() / forEach() / map() / sort(), etc.
 
 	https://www.ecma-international.org/ecma-262/11.0/
 
   	Adapted and extended from es5-shim.js
 
-	Polyfix: A concatenation of 'polyfill' and 'bugfix'.
-	Many snippets of code here are simultaneously both polyfills and bugfixes.
+	Polyfix: A concatenation of 'polyfill' and 'bugfix'. Many snippets of code here are simultaneously both polyfills and bugfixes.
 
  	Polyfill Order:
 
@@ -27,7 +26,7 @@
 
 	I have cleaned up a lot of the superfluous code logic present in ES5-shim.js.
 	There might be a slight performance cost (<1 to 10)% compared to ES5-shim.js, on legacy engines,
-	but the gain is in filesize.
+	but the gain is in smaller relative filesize and higher modularity.
 	This cost will be indistinguishable on modern engines, which are exponentially faster, and which will have
 	many native functions defined already.
 
@@ -41,19 +40,17 @@
 
 	Note 1:
 
-	Certain Array.prototype methods, if required to be polyfixed,
- 	if 'use strict' is unsupported,
+	Certain Array.prototype methods, if required to be polyfixed, if 'use strict' is unsupported,
 	will necessarily not throw a TypeError if called on null or undefined,
 	different from the native functions, due to null / undefined being replaced
-	with the global object in non-strict mode `call`
-	and it being impossible to determine if
-	the function was called with null, undefined or window
+	with the global object in non-strict mode `call`,
+	and it being impossible to determine if the function was called with null, undefined or window.
 
 
 */
-"version 1.1.2.00";
+; // Add semicolon to prevent IIFE from being passed as argument to concatenated code.
 
-;(function( globalThis, context, factory ) {
+(function( globalThis, context, factory ) {
 
 	if (context === 'window' || !context) {
 
@@ -169,7 +166,7 @@
 
 	var _SUPPORTS_ = {
 
-                // full support of named function expressions
+                // checks for full support of named function expressions
 		'NFE': (function(g) { // Ensure `g` is always undefined while not overriding inner scope with `var`.
 		    return function() { 
                         var f = function g(){}; return (typeof g !== 'function'); // IE<9: `g` is 'function'
@@ -177,13 +174,13 @@
 		})()(),
 
 
-                // full support of string bracket notation
+                // checks for full support of string bracket notation
 		'string-bracket-notation': (function() {
                     return (Object("a")[0] === "a") && (0 in Object("a")); // Check failure of by-index access of string characters (IE < 9) and failure of `0 in Object("a")` (Rhino)
                 })(),
 
 
-		// full support of Object.defineProperty
+		// checks for full support of Object.defineProperty
 		'descriptors': !!(function( defineProperty, obj ) {
 			try {
 				defineProperty( obj, 'x', { enumerable: false, value: obj });
@@ -193,7 +190,7 @@
 		})( Object.defineProperty, {} ),
 
 
-		// full support of keyword `let`
+		// checks for full support of keyword `let`
 		'let': !!(function() {
 		   try {
 			  return new Function( // non-strict mode
@@ -210,7 +207,7 @@
 		})(),
 
 
-		// `void` operator
+		// checks for full support of the `void` operator
 		'void': !!(function() {
 			try { return new Function('return !(void 0)')() } catch (e) {}
 		})(),
@@ -231,6 +228,7 @@
 
 	// Booleans:
 	var supportsDescriptors = _SUPPORTS_['descriptors'];
+	
 	var splitString = !(_SUPPORTS_['string-bracket-notation']); // Check failure of by-index access of string characters (IE < 9) and failure of `0 in boxedString` (Rhino)
 	
 	var hasToStringTag = (typeof Symbol === 'function' && typeof Symbol.toStringTag === 'symbol');
