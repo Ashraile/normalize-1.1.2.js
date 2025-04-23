@@ -359,7 +359,7 @@
 	this.ToObject = ToObject;
 	this.ToUint32 = ToUint32;
 	this.ToPrimitive = ToPrimitive;
-	this.globalThis = window;
+	this.globalThis = GLOBAL;
 	this.enumerate = enumerate;
 	this.time = time;
 	this.type = type;
