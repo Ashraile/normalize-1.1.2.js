@@ -164,43 +164,6 @@
     ///                                                                                                               ///
     /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-    var isActualNaN = Number.isNaN || function isActualNaN(x) { return x !== x };
-	var isArray = Array.isArray || function isArray(obj) { return ObjectPrototypeToString.call(obj) === '[object Array]' };
-    var isWindow = function isWindow() {
-        if (typeof window === 'object' && window && (window.window === window) && typeof window.document === 'object') {return true} return false;
-    };
-
-
-    /* 
-     * Detects IE without User-agent hacks. | Supports minification. | https://github.com/ashraile/detect-IE/ | MIT | Tested via BrowserStack
-     * Shoutout to https://stackoverflow.com/users/5807141/j-j for the overlooked comment on msCrypto: which is only defined in IE11 as IE11 document mode.
-     * https://stackoverflow.com/questions/21825157/internet-explorer-11-detection
-     * https://developer.mozilla.org/en-US/docs/Web/API/Window/crypto
-     */
-    
-    function isIE() {
-
-        if (!isWindow()) { return false }
-
-        var ie_map = {'5': 5, '5.5': 5.5, '5.6': 6, '5.7': 7, '5.8': 8, '9': 9, '10': 10, '11': 11};
-        var is_default_IE11 = !!(window.msCrypto && !document.currentScript);
-        var jscript_version = +( new Function("/*@cc_on return @_jscript_version; @*\/")() ) || (is_default_IE11 ? 11 : undefined);
-
-        // Workaround Test for Windows Service Pack Update (IE6 / 7). Document mode wasnt introduced until IE8, so this check works fine.
-        if (jscript_version === 5.7 && !window.XMLHttpRequest) { jscript_version = 5.6 }
-        if (!jscript_version) { return false }
-
-        var envir = { 
-            'jscript': jscript_version, 'mode': document.documentMode, 'is_default_IE11': is_default_IE11,
-            'browser': (ie_map[String(jscript_version)] || jscript_version)
-        };
-
-        envir[envir.browser] = (envir.browser == envir.mode); // Make sure if we're screening for IE.x as IE.x that its running as that with same document mode
-
-        return envir;
-        
-    };
-
 
     // https://caniuse.com/let
 	// https://caniuse.com/defineProperty
@@ -323,7 +286,7 @@
 	var constructorRegex = /^\s*class /, funcRegex = /^(\[object (Function|GeneratorFunction)\])$/;
 
 	// Export useful functions
-    this.version = "1.2.0.66";
+    this.version = "1.2.0.68";
 	this.name = 'normalize';
     this.expando = +new Date();
     this.globalThis = GLOBAL;
@@ -342,10 +305,8 @@
 	this.ToObject = ToObject;
 	this.ToUint32 = ToUint32;
 	this.ToPrimitive = ToPrimitive;
-	this.enumerate = enumerate;
 	this.time = time;
 	this.type = type;
-	this.isStrictlyInfinite = isStrictlyInfinite;
 	this.isStrictMode = isStrictMode;
 	this.ToNumber = ToNumber;
 	this.ToSoftNumber = ToSoftNumber;
@@ -360,19 +321,23 @@
         }
     };
 
+    //console.log(!!-0, !!+0, !!NaN); false
+
     // ToInteger | ECMA-262/11.0
 	function ToInteger(num) {
-		// Unary operator throws TypeError on BigInt, and Symbol primitives
+		// Unary operator throws TypeError on BigInt, and Symbol primitives as per the spec. Number() constructor does not.
 		var n = +num; // 1. Let number be ToNumber(argument)
 		// ToNumber(n) is only falsy on -0, +0, and NaN
 
 		if (!n) { return 0 } // 2. if number is NaN, +0, or -0, return +0.
-		if (!isStrictlyInfinite(n)) { return n } // step 3
+        if (n === (1/0) || n === -(1/0)) { return n } // 3. If number is +∞ or -∞, return number.
 
 		n = (n > 0 || -1) * Math.floor(Math.abs(n)); // step 4
 
-		return n || 0; // step 5
+		return n || 0; // steps 5 and 6
 	}
+
+    console.log(ToInteger(3.2));
 
 	// ToObject
 	function ToObject(o, CustomErrorMsg) {
@@ -439,9 +404,8 @@
 		throw new TypeError('[Array.prototype.' + s + ']: `' + val + '` is not a callable function!');
 	}
 
-    function has(object, key) {
-        return object ? Object.prototype.hasOwnProperty.call(object, key) : false;
-    }
+    function has(object, key) { return object ? Object.prototype.hasOwnProperty.call(object, key) : false; }
+
 	function getOwnProp(obj, prop) { return ObjectProto.hasOwnProperty.call(obj, prop) ? obj[prop] : undefined }
 
     function hasAccessors(obj) { 
@@ -547,10 +511,21 @@
 		}
 	}
 
-	function enumerate(obj) {
-		for (var i in obj) { try { console.log(i, ':', obj[i]) } catch (e) {} }
-	}
+    function isActualNaN(val) {
+        if (typeof Number.isNaN === 'function') { return Number.isNaN(val); } else { return val !== val }
+    }
 
+    function isArray(obj) {
+        if (typeof Array.isArray === 'function') {
+            return Array.isArray(obj);
+        } else {
+            return ObjectPrototypeToString.call(obj) === '[object Array]';
+        }
+    }
+
+    function isWindow() {
+        if (typeof window === 'object' && window && (window.window === window) && typeof window.document === 'object') {return true} return false;
+    }
 
 	// isES6ClassFn
 	function isES6ClassFn(value) { // City Lights Floral Theme
@@ -580,6 +555,31 @@
 	function isEnumerable(prop, obj) {
 		return obj.propertyIsEnumerable(prop);
 	}
+
+    /* 
+     * Detects IE without User-agent hacks. | Supports minification. | https://github.com/ashraile/detect-IE/ | MIT | Tested via BrowserStack
+     */
+    function isIE() {
+
+        if (!isWindow()) { return false }
+
+        var ie_map = {'5': 5, '5.5': 5.5, '5.6': 6, '5.7': 7, '5.8': 8, '9': 9, '10': 10, '11': 11};
+        var is_default_IE11 = !!(window.msCrypto && !document.currentScript);
+        var jscript_version = +( new Function("/*@cc_on return @_jscript_version; @*\/")() ) || (is_default_IE11 ? 11 : undefined);
+
+        // Workaround Test for Windows Service Pack Update (IE6 / 7). Document mode wasnt introduced until IE8, so this check works fine.
+        if (jscript_version === 5.7 && !window.XMLHttpRequest) { jscript_version = 5.6 }
+        if (!jscript_version) { return false }
+
+        var envir = { 
+            'jscript': jscript_version, 'mode': document.documentMode, 'is_default_IE11': is_default_IE11,
+            'browser': (ie_map[String(jscript_version)] || jscript_version)
+        };
+
+        envir[envir.browser] = (envir.browser == envir.mode); // Make sure if we're screening for IE.x as IE.x that its running as that with same document mode
+
+        return envir;
+    };
 
 	// isNode
 	function isNode(o, val) {
@@ -620,11 +620,6 @@
 				 return RegExpPrototypeExec.call( value ), true;
 			} catch (e) {}
 		})() : ObjectPrototypeToString.call(value) === '[object RegExp]';
-	}
-
-	// isStrictlyInfinite
-	function isStrictlyInfinite(num) {
-		return (num === 1/0 || num === -(1/0))
 	}
 
 	// isStrictMode
@@ -3548,6 +3543,4 @@ define( ElementProto, 'getAttribute', (function( origGetAttribute ) {
 
   })( window );
 
-
-
-    }); // END OF FACTORY FUNCTION
+}); // END OF FACTORY FUNCTION
