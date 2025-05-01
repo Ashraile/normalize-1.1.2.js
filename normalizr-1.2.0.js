@@ -1,11 +1,13 @@
 /**
-	Normalize-1.2.0.js: A collection of polyfills to standardize the JavaScript execution environment. 
- 	Examples: globalThis, window.console.log, Object.prototype.hasOwnProperty(), Object.is() / keys(), String.prototype.trim() / fromCodePoint(),
+	Normalize-1.2.0.js: A collection of polyfills to standardize the JavaScript execution environment.
+ 	Examples: window.console.log, Object.prototype.hasOwnProperty(), Object.is() / keys(), String.prototype.trim() / fromCodePoint(),
 	Array.prototype.every() / forEach() / map() / sort(), etc.
 
 	https://www.ecma-international.org/ecma-262/11.0/
 
   	Adapted and extended from es5-shim.js
+
+    "Fine. I'll do it myself."
 
 	Polyfix: A concatenation of 'polyfill' and 'bugfix'. Many snippets of code here are simultaneously both polyfills and bugfixes.
 
@@ -56,21 +58,18 @@
 		GLOBAL['normalize'] = new factory(GLOBAL, CONTEXT);
 	} else
 	if (CONTEXT === 'node') {
-       module.exports = new factory(GLOBAL, CONTEXT); //
+       module.exports = new factory(GLOBAL, CONTEXT);
     } else {
 		GLOBAL['normalize'] = new factory(GLOBAL, CONTEXT);
 	}
 
 })(  
-    // GLOBAL: | # | Finds globalThis without polluting the global namespace | Adapted from https://mathiasbynens.be/notes/globalthis
+    // GLOBAL: | # | Finds `globalThis` without polluting the global namespace | Adapted from https://mathiasbynens.be/notes/globalthis
     (function() {
-        if (typeof globalThis === 'object' && globalThis.globalThis === globalThis) { return globalThis; }   
-         
+        if (typeof globalThis === 'object' && globalThis.globalThis === globalThis) { return globalThis; }       
         try {
-            Object.defineProperty(Object.prototype, '__magic__', {
-                get: function() {
-                    return this;
-                },
+            Object.defineProperty( Object.prototype, '__magic__', {
+                get: function() { return this; },
                 configurable: true
             });
 
@@ -79,30 +78,24 @@
 
             var __global__ = (typeof globalThis === 'undefined') ? getThis() : globalThis; // Cache our `globalThis` locally.
             
-            // Clean up all namespaces. Try-catch in case IE gets quirky.
-            try { delete __magic__.globalThis; } catch (e) {}
+            try { delete __magic__.globalThis; } catch (e) {} // Clean up all namespaces. Try-catch in case IE gets quirky.
             delete Object.prototype.__magic__; 
 
-            return __global__;  // console.log(__global__, typeof globalThis === 'undefined'); // the global this, `true`
+            return __global__;
 
         } catch (e) {
             return getThis(); // In IE8, Object.defineProperty only works on DOM objects. If we hit this code path, assume `window` exists.
         }   
-
         function getThis() {
             // if we're here it's almost certainly Internet Explorer so check for a window.
             if (typeof window !== 'undefined' && window && window.window === window && typeof window.document !== 'undefined') {
                 return window; // if this much effort was taken to simulate a browser environment, assume they know what they're doing
             } else {
-                try {
-                    return this;
-                } catch (e) {
-
-                }
+                try { return this; } catch (e) {}
             }
         };
-
     })(),
+    // end GLOBAL arg
 
     // CONTEXT: Return the specific JavaScript execution context, such as window, WebWorkers, Node.js, etc.
     (function() {
@@ -127,24 +120,23 @@
          * | Dependency | Console.log() polyfill. | # | Adapted from https://github.com/paulmillr/console-polyfill | (MIT) | Makes it safe to do console.log() always.
          */
 
-        (function(w, f, prop, method) { // "use strict";
+        (function(w, f, prop, method) {
             if (!w.console) {w.console = {}}
             var con = w.console, properties = ['memory'], methods = [
                 'assert|clear|count|debug|dir|dirxml|error|exception|group|groupCollapsed|',
                 'groupEnd|info|log|markTimeline|profile|profiles|profileEnd|show|table|',
                 'time|timeEnd|timeline|timelineEnd|timeStamp|trace|warn|timeLog'
             ].join('').split('|');
-            while (prop = properties.pop()) { if (!con[prop]) {con[prop] = {}}}
-            while (method = methods.pop()) { if (!con[method]) {con[method] = f}}
+            while (prop = properties.pop()) { if (!con[prop]) {con[prop] = {}} }
+            while (method = methods.pop()) { if (!con[method]) {con[method] = f} }
         })(GLOBAL, function(){});
-
 
         /*
          * | Dependency | Object.prototype.hasOwnProperty() polyfill | # | https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/hasOwnProperty
          * | Necessary to define here, as our `Object.defineProperty` wrapper, `define`, requires `hasOwnProperty`
          */
 
-        ;(function(hasOwn) { 
+        var HASOWNPROPERTY = (function(hasOwn) { 
             function hasOwnProperty(name) {
                 var O = ToObject(this, 'Object.prototype.hasOwnProperty called on null or undefined!');
                 var key = String(name);
@@ -154,7 +146,7 @@
 
             if ( ! hasOwn ) {
                 try {
-                    Object.defineProperty( Object.prototype , 'hasOwnProperty', {
+                    Object.defineProperty(Object.prototype, 'hasOwnProperty', {
                         enumerable: false, configurable: true, writable: true,
                         value: hasOwnProperty
                     });
@@ -162,14 +154,22 @@
                     Object.prototype.hasOwnProperty = hasOwnProperty;
                 }
             }        
+            return Object.prototype.hasOwnProperty;
         })(Object.prototype.hasOwnProperty);
 
 
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+    ///                                                                                                               ///
+    ///--------------------------------- General Purpose Functions, Semi-global Variables ----------------------------///
+    ///                                                                                                               ///
+    /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-/// ----------------------------------General Purpose Functions, Semi-global Variables -------------------------- ///
+    var isActualNaN = Number.isNaN || function isActualNaN(x) { return x !== x };
+	var isArray = Array.isArray || function isArray(obj) { return ObjectPrototypeToString.call(obj) === '[object Array]' };
+    var isWindow = function isWindow() {
+        if (typeof window === 'object' && window && (window.window === window) && typeof window.document === 'object') {return true} return false;
+    };
 
-/////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     /* 
      * Detects IE without User-agent hacks. | Supports minification. | https://github.com/ashraile/detect-IE/ | MIT | Tested via BrowserStack
@@ -177,15 +177,12 @@
      * https://stackoverflow.com/questions/21825157/internet-explorer-11-detection
      * https://developer.mozilla.org/en-US/docs/Web/API/Window/crypto
      */
-    var isIE = (function(window, IE) {
+    
+    function isIE() {
 
-        if (!(typeof window === 'object' && window && (window.window === window) && typeof window.document === 'object')) { return false } // node etc
+        if (!isWindow()) { return false }
 
-        // Conditional compilation is a special comment syntax that executes in IE only. Regular browsers, and IE11** interpret them as normal comments.
-        // `@_jscript_version` is an IE-specific conditional constant. 
-        // ** If the `documentMode` is changed, IE11 reports `@_jscript_version` as "11", and "is_default_IE11" returns `false`. (Yep, textbook Microsoft) 
-        // IE11 check is future-proofed by verifying nonexistence of `document.currentScript`.
-
+        var ie_map = {'5': 5, '5.5': 5.5, '5.6': 6, '5.7': 7, '5.8': 8, '9': 9, '10': 10, '11': 11};
         var is_default_IE11 = !!(window.msCrypto && !document.currentScript);
         var jscript_version = +( new Function("/*@cc_on return @_jscript_version; @*\/")() ) || (is_default_IE11 ? 11 : undefined);
 
@@ -195,25 +192,27 @@
 
         var envir = { 
             'jscript': jscript_version, 'mode': document.documentMode, 'is_default_IE11': is_default_IE11,
-            'browser': (IE[String(jscript_version)] || jscript_version)
+            'browser': (ie_map[String(jscript_version)] || jscript_version)
         };
-        envir[envir.browser] = (envir.browser == envir.mode); // Make sure if we're screening for IE.x as IE.x that its running as that with same doc mode
+
+        envir[envir.browser] = (envir.browser == envir.mode); // Make sure if we're screening for IE.x as IE.x that its running as that with same document mode
 
         return envir;
+        
+    };
 
-    })(GLOBAL, {'5': 5, '5.5': 5.5, '5.6': 6, '5.7': 7, '5.8': 8, '9': 9, '10': 10, '11': 11}); // `@_jscript_version` mapped to IE browser versions.
-
-    var	AS_CONST  = { enumerable: false, configurable: false, writable: false }, // the default
-        NON_ENUM  = { enumerable: false, configurable: true, writable: true },
-        READ_ONLY = { enumerable: true, configurable: true, writable: false },
-        FULL_MOD  = { enumerable: true, configurable: true, writable: true };
 
     // https://caniuse.com/let
 	// https://caniuse.com/defineProperty
 	// https://caniuse.com/es5
 	// https://kangax.github.io/nfe/
 
-	var _SUPPORTS_ = {
+    var	AS_CONST  = { enumerable: false, configurable: false, writable: false }, // the default
+        NON_ENUM  = { enumerable: false, configurable: true, writable: true },
+        READ_ONLY = { enumerable: true, configurable: true, writable: false },
+        FULL_MOD  = { enumerable: true, configurable: true, writable: true },
+
+       _SUPPORTS_ = {
 
         // checks for full support of named function expressions
 		'NFE': (function(g) { // Ensure `g` is always undefined while not overriding inner scope with `var`.
@@ -263,6 +262,7 @@
 		'NFESafari2.x': null // TODO
 	};
 
+
 	if (!_SUPPORTS_['NFE'] || !_SUPPORTS_['void']) {
 		console.warn(
 			'normalize.js expects true named function expression / void operator support. ' +
@@ -275,32 +275,24 @@
 	}
 
 	var supportsDescriptors = _SUPPORTS_['descriptors'];
-	var splitString = ! _SUPPORTS_['string-bracket-notation']; // Check failure of by-index access of string characters (IE < 9) and failure of `0 in boxedString` (Rhino)
+
+	var splitString = (_SUPPORTS_['string-bracket-notation'] === false); // Check failure of by-index access of string characters (IE < 9) and failure of `0 in boxedString` (Rhino)
 
 	var hasToStringTag = (typeof Symbol === 'function' && typeof Symbol.toStringTag === 'symbol');
 
-    // Shortcut to often accessed variables, in order to avoid multiple dereference that costs universally. 
-    // This also holds a reference to known-good functions.
+    function HandleUnboxedString(value) {
+		return (splitString && isString(value)) ? strSplit(value, '') : null;
+	}
 
-	// # The `ES.x` methods are now global functions. By removing the unnecessary extra step of first referencing
-	// `ES`, there is an improvement of ~10% on legacy browsers (like IE).
+    // Shortcut to often accessed variables, in order to avoid multiple dereference that costs universally. 
+    // This also holds a reference to known-good functions. The `ES.x` methods are now global functions. 
+    // By removing the unnecessary extra step of first referencing `ES`, there is an improvement of ~10% on legacy browsers (like IE).
 	// On exponentially faster modern browsers, either approach is basically a matter of preference.
 
-	var $Array = Array, 
-        $Object = Object, 
-        $Function = Function, 
-        $String = String, 
-        $Number = Number, 
-        $P = 'prototype';
+	var $Array = Array, $Object = Object, $Function = Function, $String = String, $Number = Number, $P = 'prototype';
 
-	var ArrayProto = Array[$P],
-		ObjectProto = Object[$P],
-		FunctionProto = Function[$P],
-		StringProto = String[$P],
-		NumberProto = Number[$P],
-		ErrorProto = Error[$P],
-		RegExpProto = RegExp[$P],
-		DateProto = Date[$P];
+	var ArrayProto = Array[$P], ObjectProto = Object[$P], FunctionProto = Function[$P], StringProto = String[$P],
+		NumberProto = Number[$P], ErrorProto = Error[$P], RegExpProto = RegExp[$P], DateProto = Date[$P];
 
 	// Snapshot variables; Methods are not passed by reference
 	var array_slice = ArrayProto.slice,
@@ -311,7 +303,7 @@
 		array_join = ArrayProto.join,
 		call = FunctionProto.call,
 		apply = FunctionProto.apply;
-		// ArrayProto.pop(), StringProto.split()
+	// ArrayProto.pop(), StringProto.split()
 
 	var StringPrototypeValueOf = StringProto.valueOf,
 		NumberPrototypeToString = NumberProto.toString,
@@ -322,8 +314,7 @@
     var max = Math.max, min = Math.min, floor = Math.floor, abs = Math.abs;
 
     // http://blog.stevenlevithan.com/archives/faster-trim-javascript
-    // http://perfectionkills.com/whitespace-deviations/
-    // ES5 15.5.4.20 | whitespace from: http://es5.github.io/#x15.5.4.20
+    // http://perfectionkills.com/whitespace-deviations/ | ES5 15.5.4.20 | whitespace from: http://es5.github.io/#x15.5.4.20
 
     var ws = '\x09\x0A\x0B\x0C\x0D\x20\xA0\u1680\u180E\u2000\u2001\u2002\u2003\u2004'
         + '\u2005\u2006\u2007\u2008\u2009\u200A\u202F\u205F\u3000\u2028\u2029\uFEFF';
@@ -331,26 +322,18 @@
 	var ErrNullish = ' called on null or undefined!';
 	var constructorRegex = /^\s*class /, funcRegex = /^(\[object (Function|GeneratorFunction)\])$/;
 
-	// Is:
-	var isActualNaN = Number.isNaN || function isActualNaN(x) { return x !== x };
-	var isArray = Array.isArray || function isArray(obj) {
-		return ObjectPrototypeToString.call(obj) === '[object Array]'
-	};
-
-
-	var isStrict = function() { return !this }();
-
 	// Export useful functions
-    this.version = "1.2.0.65";
+    this.version = "1.2.0.66";
 	this.name = 'normalize';
     this.expando = +new Date();
+    this.globalThis = GLOBAL;
+    this.environment = context;
     this.isIE = isIE;
+    this.supports = _SUPPORTS_;
 
 	this.define = define;
 	this.isCallable = isCallable;
-	this.is_default_IE11 = !!window.msCrypto;
 	this.isES6ClassFn = isES6ClassFn;
-
 	this.isNode = isNode; 
 	this.isPrimitive = isPrimitive;
 	this.isRegex = isRegex;
@@ -359,23 +342,80 @@
 	this.ToObject = ToObject;
 	this.ToUint32 = ToUint32;
 	this.ToPrimitive = ToPrimitive;
-	this.globalThis = GLOBAL;
 	this.enumerate = enumerate;
 	this.time = time;
 	this.type = type;
 	this.isStrictlyInfinite = isStrictlyInfinite;
 	this.isStrictMode = isStrictMode;
-	this.supports = _SUPPORTS_;
 	this.ToNumber = ToNumber;
 	this.ToSoftNumber = ToSoftNumber;
 	this.ToSoftInteger = ToSoftInteger;
-	this.environment = context;
 	this.isObsolete = isObsolete();
+
+    this.export = function(str) {
+        if (str === "*") {
+
+        } else {
+            GLOBAL[str] = this[str];
+        }
+    };
+
+    // ToInteger | ECMA-262/11.0
+	function ToInteger(num) {
+		// Unary operator throws TypeError on BigInt, and Symbol primitives
+		var n = +num; // 1. Let number be ToNumber(argument)
+		// ToNumber(n) is only falsy on -0, +0, and NaN
+
+		if (!n) { return 0 } // 2. if number is NaN, +0, or -0, return +0.
+		if (!isStrictlyInfinite(n)) { return n } // step 3
+
+		n = (n > 0 || -1) * Math.floor(Math.abs(n)); // step 4
+
+		return n || 0; // step 5
+	}
+
+	// ToObject
+	function ToObject(o, CustomErrorMsg) {
+		if (o == null) { throw new TypeError( CustomErrorMsg || "ToObject called with argument null or undefined!" ) }
+		return Object(o);
+	}
+
+	// ToPrimitive
+	function ToPrimitive( input ) {
+		return isPrimitive( input ) ? input : (function(valueOf, toStr, val) {
+			if ( isCallable( valueOf ) ) {
+				val = valueOf.call( input );
+				if (isPrimitive( val )) { return val }
+			}
+			if ( isCallable( toStr ) ) {
+				val = toStr.call(input);
+				if (isPrimitive( val )) { return val }
+			}
+			throw new TypeError();
+		})(input.valueOf, input.toString);
+	}
+
+	// ToUint32 | Almost never used, as inlining is faster
+	function ToUint32(x) { return x >>> 0 }
+
+	// ToNumber
+	function ToNumber(n) { return +n }
+
+	// ToSoftNumber | Converts any value to a Number type (including NaN) via unary / number operator without throwing a TypeError
+	function ToSoftNumber(num, notUnary) {
+		return (function() {
+			try { return (notUnary) ? Number(num) : +num } catch (e) { return NaN }
+		})();
+	}
+
+	// ToSoftInteger | Coerces a number to an integer without throwing a TypeError.
+	function ToSoftInteger(num, notUnary) {
+		return ToInteger(ToSoftNumber(num, notUnary));
+	}
 
 	// Internal Typeof Wrapper (as contributed to MDN).
 	// https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/typeof
-	// Correctly handles functionish RegExp, functionish <object> elements, non-spec defined
-	// host objects like window, document, ES6 generators, etc.
+	// Correctly handles functionish RegExp, functionish <object> elements, non-spec defined host objects like window, document, ES6 generators, etc.
 
 	function type(obj, fullClass) {
 
@@ -392,85 +432,116 @@
 	function ErrStr(s) { return 'Array.prototype.' + s + ErrNullish }
 
 	function ErrReadOnly( s, obj, prop ){
-		return new
-		TypeError("Cannot modify read-only property '"+prop+"' of value `"+obj+"` at [Array.prototype."+s+"]");
+		return new TypeError("Cannot modify read-only property '"+prop+"' of value `"+obj+"` at [Array.prototype."+s+"]");
 	}
 
 	function ThrowCallErr(s, val) {
 		throw new TypeError('[Array.prototype.' + s + ']: `' + val + '` is not a callable function!');
 	}
 
-	function hasOwnProp(prop, obj) { return ObjectProto.hasOwnProperty.call(obj, prop) }
+    function has(object, key) {
+        return object ? Object.prototype.hasOwnProperty.call(object, key) : false;
+    }
 	function getOwnProp(obj, prop) { return ObjectProto.hasOwnProperty.call(obj, prop) ? obj[prop] : undefined }
 
-	function microtime() { return + new Date() }
+    function hasAccessors(obj) { 
+        if (typeof obj === 'object') { return (('get' in obj) || ('set' in obj)) } return false;
+    }
 
+    
 	/*  Object.defineProperty convenience wrapper function. You'll see this everywhere.
 	 *  Defaults to: {enumerable: false, writable: false, configurable: false}
 	 *  Skips already defined properties.
-	 *  Doesn't support getters / setters yet.
+	 *  Supports a limited version of getters / setters
 	 *  Won't throw if browser doesn't support Object.defineProperty */
 
-	function define(obj, property, value, options, forceAssign) {
+	function define(obj, property, value, options, overwrite) {
 
-		var ecw = (function(o) {
-			if (o === Object(o)) { // {} [] (): assume if length of 3, its formatted correctly.
-				return (o.length === 3) ? o : [
-					getOwnProp(o,'enumerable'),
-					getOwnProp(o,'configurable'),
-					getOwnProp(o,'writable')
-				];
-			}
-			return [0,0,0]; // default: not enumerable, configurable or writable
-		})(options);
+        if (arguments.length < 2 || arguments.length > 5) {
+            throw new SyntaxError("`define` expects a minimum of 2 and maximum of 5 arguments");
+        }
+
+        overwrite = !!overwrite;
+
+        var ecw = (function(init) { 
+            if (options === null) {}
+            if (options === Object(options)) { // {} [] (): assume if length of 3, its formatted correctly, otherwise its an object object.
+                if (options.length === 3) { return options }
+                init[0] = getOwnProp(options, 'enumerable');
+                init[1] = getOwnProp(options, 'configurable');
+                init[2] = getOwnProp(options, 'writable');
+            } 
+            else if (typeof options === 'string') {
+                for (var i=0; i<options.length; i++) {
+                    (function(letter) {
+                        if (letter === 'e') { init[0] = true; }
+                        if (letter === 'c') { init[1] = true; }
+                        if (letter === 'w') { init[2] = true; }
+                    })(options.charAt(i).toLowerCase());
+                };
+            } else {}
+            return init;
+        })([false, false, false]); // 0: enumerable, 1: configurable, 2: writable
 
 		var enumerable = !!ecw[0], configurable = !!ecw[1], writable = !!ecw[2];
-		var userObj = null; // (arguments.length === 3) ? val : null; revisit
-		var overwrite;
+        // var hasExplicitPropertiesArg = (arguments.length === 4) && options && (typeof options === 'object');
+        var CraftedObject = {};
 
-		if (arguments.length === 5) { overwrite = !!forceAssign } // coerce to boolean
-		else {
-			if (options === Object(options) && hasOwnProp('overwrite', options) ) {
-				overwrite = options['overwrite'];
-			}
-			if (typeof options === 'boolean') { overwrite = options }
-		}
-		if (arguments.length === 2) {
-			enumerable = configurable = writable = true;
-			value = void 0;
-		}
+        if (arguments.length === 4) {
+            if (typeof options === 'boolean') { overwrite = options; }
+        }
+        else 
+        if (arguments.length === 3) {
+            overwrite = false;
+        } 
+        else
+        if (arguments.length === 2) {
+            enumerable = configurable = writable = true; 
+            value = (function(u){return u})(); // undefined
+        } 
 
-		if (typeof options === 'string') {
+        /* Example: define(window, 'getter', { 
+            get() { return 20000; }, set(a) { window.current = a; },
+            },  { enumerable: true, configurable: true, writable: false }); 
+        */
 
-			options = options.toLowerCase();
+        if (hasAccessors(value)) { 
+            // If `hasAccessors` is `true`, `value` is an object with `get` / `set` accessors, which we will assume to be intentional.
+            // NOTE: You cannot both specify accessors and a `value` or `writable` attribute (even if the attribute is `false` or `undefined`)
+            // And the native functions will still throw even when the `forbidden` attributes are merely inherited (such as from Object.prototype) and never defined directly. 
+            // So `in` is the correct specificity, to model this function to work like native implementations.
+            CraftedObject = value;
 
-			for (var i=0;i<options.length;i++) {
-				(function(letter) {
-					if (letter === 'e') { enumerable = !0 }
-					if (letter === 'c') { configurable = !0 }
-					if (letter === 'w') { writable = !0 }
-				})(options.charAt(i));
-			}
-		}
+            if (('writable' in CraftedObject) || ('value' in CraftedObject) || writable) {
+                throw new TypeError("Invalid property descriptor. Cannot both specify accessors and a value or writable attribute");
+            }
+        } else {
+            // Value does not contain accessors, only descriptors. We can define a standard object to inject into Object.defineProperty
+            CraftedObject.value = value;
+            CraftedObject.writable = writable;
+        }
 
+        CraftedObject.enumerable = enumerable;
+        CraftedObject.configurable = configurable;
+
+        // set ECW attributes. Options object overwrites internal object.
+     
 		if (overwrite || !(property in obj)) { // only if property isn't defined, or we want to overwrite
 			try {
-			  if ( ! supportsDescriptors ) { throw 0 } // caught by try catch
-			  Object.defineProperty(obj, property, (userObj || {
-				  'value': value,
-				  'enumerable': enumerable,
-				  'configurable': configurable,
-				  'writable': writable
-			  }));
-			} catch (error) { // Object.defineProperty isn't supported
-			  obj[property] = value;
+                //if (!supportsDescriptors) {throw 0} // caught by try catch
+                
+                Object.defineProperty(obj, property, CraftedObject);
+
+			} catch (e) { // Object.defineProperty isn't supported
+                console.warn(e);
+			    obj[property] = value;
 			}
 		}
 	}
 
 	function defineProperties(obj, map, forceAssign) {
 		for (var name in map) { // use `define` instead, to avoid the IE<9 enumeration bug
-			if ( hasOwnProp(name, map) ) {
+			if ( has(map, name) ) {
 				define( obj, name, map[name], NON_ENUM, forceAssign );
 			}
 		}
@@ -480,9 +551,6 @@
 		for (var i in obj) { try { console.log(i, ':', obj[i]) } catch (e) {} }
 	}
 
-	function HandleUnboxedString(val) {
-		return splitString && isString(val) ? strSplit(val, '') : null;
-	}
 
 	// isES6ClassFn
 	function isES6ClassFn(value) { // City Lights Floral Theme
@@ -506,8 +574,7 @@
 				} catch (e) {}
 			})();
 		}
-		return isES6ClassFn(value) ?
-			false : !!ObjectPrototypeToString.call( value ).match( funcRegex );
+		return isES6ClassFn(value) ? false : !!ObjectPrototypeToString.call( value ).match( funcRegex );
 	}
 
 	function isEnumerable(prop, obj) {
@@ -567,11 +634,9 @@
 	function isString(value) {
 		if (typeof value === 'string') { return true }
 		if (typeof value !== 'object') { return false }
-		return hasToStringTag ? !!(function tryStringObject() {
-			try {
-				return StringPrototypeValueOf.call( value ), true;
-			} catch (e) {}
-		})() : ObjectPrototypeToString.call(value) === '[object String]';
+		return hasToStringTag ? 
+            !!(function tryStringObject() { try {return StringPrototypeValueOf.call(value), true;} catch (e){} })() : 
+            (ObjectPrototypeToString.call(value) === '[object String]');
 	}
 
 
@@ -584,60 +649,6 @@
 		}
 		console.timeEnd(name || 'speed');
 
-	}
-
-	// ToInteger | ECMA-262/11.0
-	function ToInteger(num) {
-		// Unary operator throws TypeError on BigInt, and Symbol primitives
-		var n = +num; // step 1
-		// ToNumber(n) is only falsy on -0, +0, and NaN
-
-		if (!n) { return 0 } // step 2
-		if (!isStrictlyInfinite(n)) { return n } // step 3
-
-		n = (n > 0 || -1) * Math.floor(Math.abs(n)); // step 4
-
-		return n || 0; // step 5
-	}
-
-	// ToObject
-	function ToObject(o, CustomErrorMsg ) {
-		if (o == null) { throw new TypeError( CustomErrorMsg || "ToObject called with argument null or undefined!" ) }
-		return Object(o);
-	}
-
-	// ToPrimitive
-	function ToPrimitive( input ) {
-		return isPrimitive( input ) ? input : (function(valueOf, toStr, val) {
-			if ( isCallable( valueOf ) ) {
-				val = valueOf.call( input );
-				if (isPrimitive( val )) { return val }
-			}
-			if ( isCallable( toStr ) ) {
-				val = toStr.call(input);
-				if (isPrimitive( val )) { return val }
-			}
-			throw new TypeError();
-		})(input.valueOf, input.toString);
-	}
-
-	// ToUint32 | Almost never used, as inlining is faster
-	function ToUint32(x) { return x >>> 0 }
-
-	// ToNumber
-	function ToNumber(n) { return +n }
-
-	// ToSoftNumber
-	// Converts any value to a Number type (including NaN) via unary / number operator without throwing a TypeError
-	function ToSoftNumber(num, notUnary) {
-		return (function() {
-			try { return (notUnary) ? Number(num) : +num } catch (e) { return NaN }
-		})();
-	}
-
-	// ToSoftInteger | Coerces a number to an integer without throwing a TypeError.
-	function ToSoftInteger(num, notUnary) {
-		return ToInteger(ToSoftNumber(num, notUnary));
 	}
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -756,29 +767,49 @@
 	var arraySort = call.bind( ArrayProto.sort );
 	var trim = call.bind( StringProto.trim );
 
+    // DIFFERENCE BETWEEN UNARY OPERATOR AND NUMBER() CONSTRUCTOR FOR NUMBER CONVERSION: BIGINT VALUES DO NOT THROW A TYPE_ERROR.
+    // Factory isFinite and isNaN WILL throw on BigInt values, so we use the unary operator instead.
+
+    /*
+    199df9
+#22a6b4
+    a36fff
+    6dbd47
+    35e3ff  
+    199df9
+    afd2ff
+    00aacc
+    586786
+
+    */
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ///                                                                                                                                                      ///
 /// ------------------------------------------------- Window / Global Object, Document property polyfills -----------------------------------------------///
 ///                                                                                                                                                      ///
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+;
+  (function GlobalClosure(window, undefined) { // Window Internal Variable Closure
 
-;(function GlobalClosure(window) { // Window Internal Variable Closure
+	define(window, 'Infinity', 1/0);
+    define(window, 'NaN', Number("/"));
+    define(window, 'undefined', undefined, (window.undefined !== undefined));
 
-	define( window, 'Infinity', 1/0 /*, as_const */); // default
-	define( window, 'NaN', Number('/'));
-	define( window, 'globalThis', window, NON_ENUM );
-	define( window, 'undefined', undefined, (window['undefined'] !== undefined) );
+    define(window, 'globalThis', window, {enumerable: false, writable: true, configurable: true});
+    define(window, 'isNaN', function isNaN(v) { v = +v; return (v !== v)}, NON_ENUM);
+    define(window, 'isFinite', function isFinite(v) { 
+        v = +v;
+        if (v !== v || v === Infinity || v === -Infinity) { return false } return true; // If number is NaN, +∞, or −∞, return false. Otherwise, return true.
+    }, NON_ENUM);
+
+    define(window, 'isIE', isIE, NON_ENUM );
+
+
 
 	// Non-standard. Since this function was so useful, I decided to make it part of the global environment.
 	// Comment the following line if you do not prefer this.
 	define( window, 'isCallable', isCallable, NON_ENUM );
 
 	// define( window, 'isFinite', function isFinite(v) {}, NON_ENUM );
-
-	// window.isNaN() polyfill | MDN | https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/isNaN
-	define( window, 'isNaN', (function() {
-		return function isNaN(v) { return Number(v) !== Number(v) }
-	})(), NON_ENUM );
 
 
 	// ES-5 15.1.2.2 | eslint-disable-next-line radix
@@ -806,13 +837,10 @@
 	define( window, 'parseFloat', (function( origParseFloat ) {
 
 		return function parseFloat( string ) {
-
 			var inputString = trim( String( string ) );
 			var result = origParseFloat( inputString );
 			return result === 0 && strSlice( inputString, 0, 1 ) === '-' ? -0 : result;
-
-		}
-
+    	}
 	})(parseFloat), NON_ENUM, (1 / parseFloat('-0') !== -Infinity) );
 
   })(GLOBAL); // End of Window Closure
@@ -822,8 +850,23 @@
 /// ------------------------------------------------------- Number property polyfills ---------------------------------------------------------------- ///
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
+;
   (function NumberClosure(window) { // Number Internal Variable Closure
+
+    define(Number, 'EPSILON', Math.pow(2, -52));
+	define(Number, 'MAX_SAFE_INTEGER', 9007199254740991);
+	define(Number, 'MIN_SAFE_INTEGER', -9007199254740991);
+	define(Number, 'POSITIVE_INFINITY', Infinity);
+	define(Number, 'NEGATIVE_INFINITY', -Infinity);
+	define(Number, 'MAX_VALUE', 1.7976931348623157e+308);
+	define(Number, 'MIN_VALUE', 5e-324);
+	define(Number, 'NaN', NaN);
+	define(Number, 'isNaN', function(v) { return typeof v === 'number' && isNaN(v) }, NON_ENUM );
+	define(Number, 'isFinite', function(v) { return typeof v === 'number' && isFinite(v) }, NON_ENUM );
+	define(Number, 'isInteger', function(v) { return typeof v === 'number' && isFinite(v) && Math.floor(v) === v; }, NON_ENUM );
+	define(Number, 'isSafeInteger', function(v) { return Number.isInteger(v) && Math.abs(v) <= Number.MAX_SAFE_INTEGER }, NON_ENUM );
+	define(Number, 'parseInt', parseInt, NON_ENUM );
+	define(Number, 'parseFloat', parseFloat, NON_ENUM );
 
     var toFixedHelpers = {
         'base': 1e7,
@@ -954,22 +997,6 @@
         return m;
     };
 
-	define( Number, 'EPSILON', Math.pow(2, -52));
-	define( Number, 'MAX_SAFE_INTEGER', 9007199254740991);
-	define( Number, 'MIN_SAFE_INTEGER', -9007199254740991);
-	define( Number, 'POSITIVE_INFINITY', Infinity);
-	define( Number, 'NEGATIVE_INFINITY', -Infinity);
-	define( Number, 'MAX_VALUE', 1.7976931348623157e+308);
-	define( Number, 'MIN_VALUE', 5e-324);
-	define( Number, 'NaN', NaN);
-
-	define( Number, 'isNaN', function isNaN(i) { return typeof i === 'number' && (i !== i) }, NON_ENUM );
-	define( Number, 'isFinite', function isFinite(v) { return typeof v === 'number' && window.isFinite(v) }, NON_ENUM );
-	define( Number, 'isInteger', function isInteger(v) { return typeof v === 'number' && isFinite(v) && Math.floor(v) === v; }, NON_ENUM );
-	define( Number, 'isSafeInteger', function isSafeInteger(v) { return Number.isInteger(v) && Math.abs(v) <= Number.MAX_SAFE_INTEGER }, NON_ENUM );
-	define( Number, 'parseInt', parseInt, NON_ENUM );
-	define( Number, 'parseFloat', parseFloat, NON_ENUM );
-
 	var hasToFixedBugs = ( NumberProto.toFixed && (
 		(0.00008).toFixed(3) !== '0.000'
 		|| (0.9).toFixed(0) !== '1'
@@ -978,7 +1005,6 @@
 	));
 
 	// Number.prototype.toFixed() polyfix | ES5.1 15.7.4.5 | http://es5.github.com/#x15.7.4.5
-
 	define( NumberProto, 'toFixed', toFixed, NON_ENUM, hasToFixedBugs );
 
 	var hasToPrecisionUndefinedBug = (function() {
@@ -999,18 +1025,18 @@
   /// ------------------------------------------------------ Math property polyfills -------------------------------------------------------------- ///
 
   /////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
+;
   (function MathClosure() { // Math Closure
 	'use strict';
 
-  	define( Math, 'E', 2.718281828459045); // Euler's Constant
-  	define( Math, 'LN10', 2.302585092994046); // Natural Logarithm
-  	define( Math, 'LN2', 0.6931471805599453); // etc.
-  	define( Math, 'LOG10E', 0.4342944819032518);
-  	define( Math, 'LOG2E', 1.4426950408889634);
-  	define( Math, 'PI', 3.141592653589793);
-  	define( Math, 'SQRT1_2', 0.7071067811865476);
-  	define( Math, 'SQRT2', 1.4142135623730951);
+  	define(Math, 'E', 2.718281828459045); // Euler's Constant
+  	define(Math, 'LN10', 2.302585092994046); // Natural Logarithm
+  	define(Math, 'LN2', 0.6931471805599453); // etc.
+  	define(Math, 'LOG10E', 0.4342944819032518);
+  	define(Math, 'LOG2E', 1.4426950408889634);
+  	define(Math, 'PI', 3.141592653589793);
+  	define(Math, 'SQRT1_2', 0.7071067811865476);
+  	define(Math, 'SQRT2', 1.4142135623730951);
 
   	/*	Methods that are listed as defined in all browsers since like IE3\4. Its really really highly unlikely that you would need to emulate them,
   		but you can if you're especially paranoid.
@@ -1244,7 +1270,7 @@
     };
 
 	// ES5 15.2.3.14 | http://es5.github.io/#x15.4.4.10
-	// Array.prototype.slice() bugfix | ES5-shim | Dependency | Fix boxed string bug
+	// Array.prototype.slice() bugfix | ES5-shim | Dependency | Fix boxed string bug ---------------------------------------
 	define( ArrayProto, 'slice', function slice(start, end) {
 		'use strict';
 		var arr = isString(this) ? strSplit(this, '') : this;
@@ -1633,7 +1659,35 @@
 
     }, NON_ENUM, !properlyBoxesContext( ArrayProto.forEach ));
 
+    var hasIncludesofUndefinedBug = false;
+
 	// Array.prototype.includes() !! polyfill wanted, creatable
+
+    define( ArrayProto, 'includes', function includes(searchElement, fromIndex) {
+        'use strict';
+
+        var O = ToObject(this, ErrStr('includes'));
+
+        var len = O.length >>> 0;
+
+        if (len === 0) {return false}
+
+        var n = fromIndex | 0;
+        var k = Math.max(n >= 0 ? n : len - Math.abs(n), 0);
+    
+        function sameValueZero(x, y) {
+          return x === y || (typeof x === 'number' && typeof y === 'number' && isNaN(x) && isNaN(y));
+        }
+    
+        while (k < len) {
+          if (sameValueZero(O[k], searchElement)) {
+            return true;
+          }
+          k++;
+        }
+        return false;
+
+    }, NON_ENUM, hasIncludesofUndefinedBug );
 
 	// ES5 15.4.4.14 | http://es5.github.com/#x15.4.4.14
     var hasFirefox2IndexOfBug = ArrayProto.indexOf && [0, 1].indexOf(1, 2) !== -1;
@@ -2455,7 +2509,7 @@
     // then the output array is truncated so that it contains no more than limit
     // elements.
     // "0".split(undefined, 0) -> []
-	} else if ('0'.split(undefined, 0).length) {
+	} else if (('0').split(undefined, 0).length) {
 		define( StringProto, 'split', function split(separator, limit) {
             if (typeof separator === 'undefined' && limit === 0) {
                 return [];
@@ -3371,7 +3425,7 @@ var hasNonstandardGetAttr = !!(function( undefAttr ) {
 	// ensure undefined attribute
 	if ( div.getAttribute( undefAttr ) !== null ) { return true }
 
-})( '$random' + microtime() );
+})( '$random' + (+new Date()) );
 
 // Element.prototype.getAttribute() normalization
 define( ElementProto, 'getAttribute', (function( origGetAttribute ) {
