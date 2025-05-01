@@ -313,31 +313,25 @@
 	this.ToSoftInteger = ToSoftInteger;
 	this.isObsolete = isObsolete();
 
-    this.export = function(str) {
-        if (str === "*") {
+	this.export = function(str) {
+	    if (str === "*") {
+	
+	    } else {
+	        GLOBAL[str] = this[str];
+	    }
+	};
 
-        } else {
-            GLOBAL[str] = this[str];
-        }
-    };
-
-    //console.log(!!-0, !!+0, !!NaN); false
-
-    // ToInteger | ECMA-262/11.0
+    	// ToInteger | ECMA-262/11.0
 	function ToInteger(num) {
-		// Unary operator throws TypeError on BigInt, and Symbol primitives as per the spec. Number() constructor does not.
-		var n = +num; // 1. Let number be ToNumber(argument)
-		// ToNumber(n) is only falsy on -0, +0, and NaN
+	    // Unary operator throws TypeError on BigInt, and Symbol primitives as per the spec. Number() constructor does not.
+	    var n = +num; // 1. Let number be ToNumber(argument). ToNumber(n) is only falsy on -0, +0, and NaN
+	
+	    if (!n) { return 0 } // 2. if number is NaN, +0, or -0, return +0.
+	    if (n === (1/0) || n === -(1/0)) { return n } // 3. If number is +∞ or -∞, return number.
 
-		if (!n) { return 0 } // 2. if number is NaN, +0, or -0, return +0.
-        if (n === (1/0) || n === -(1/0)) { return n } // 3. If number is +∞ or -∞, return number.
-
-		n = (n > 0 || -1) * Math.floor(Math.abs(n)); // step 4
-
-		return n || 0; // steps 5 and 6
+	    n = (n > 0 || -1) * Math.floor(Math.abs(n)); // step 4	
+	    return n || 0; // steps 5 and 6
 	}
-
-    console.log(ToInteger(3.2));
 
 	// ToObject
 	function ToObject(o, CustomErrorMsg) {
