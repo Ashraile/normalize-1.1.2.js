@@ -4,7 +4,7 @@
 	Array.prototype.every() / forEach() / map() / sort(), etc.
 
 	https://www.ecma-international.org/ecma-262/11.0/
-
+	~
   	Adapted and extended from es5-shim.js
 
     "Fine. I'll do it myself."
