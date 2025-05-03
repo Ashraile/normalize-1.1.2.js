@@ -1,5 +1,5 @@
 /**
-	Normalize-1.2.0.js: A collection of polyfills to standardize the JavaScript execution environment.
+	Normalizr-1.2.1.js: A collection of polyfills to standardize the JavaScript execution environment.
  	Examples: window.console.log, Object.prototype.hasOwnProperty(), Object.is() / keys(), String.prototype.trim() / fromCodePoint(),
 	Array.prototype.every() / forEach() / map() / sort(), etc.
 
